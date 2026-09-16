@@ -2,7 +2,7 @@
 
 A free, client-side flashcard app on GitHub Pages. Paste the URL of any Google Sheet, map its columns to flashcard fronts and backs, and study them with Anki-style cards scheduled by [FSRS](https://github.com/open-spaced-repetition/fsrs-ts) (the Free Spaced Repetition Scheduler). Everything runs in the browser — no server, no API keys, your progress is stored in `localStorage`.
 
-[Live site](https://github.com/your-user/your-repo/settings/pages) — see below to deploy your own copy.
+▶ [**Open the live app**](https://shahrin014.github.io/google-sheet-flashcards/) — or run your own copy (see below).
 
 ## How to use
 
@@ -34,12 +34,13 @@ npm run lint     # oxlint
 
 ## Deploy to GitHub Pages
 
-1. Push this repository to GitHub.
-2. Open **Settings → Pages** and set **Source** to **GitHub Actions**.
-3. The included workflow builds the app and deploys it on every push to `main`.
-4. Visit `https://<user>.github.io/<repo>/`.
+This repo already includes a workflow that builds the app and deploys it on every push to `main`. To activate it:
 
-The Vite `base` is set to `./`, so the app works on any Pages path (`user.github.io/repo`).
+1. Open **Settings → Pages** and set **Source** to **GitHub Actions**.
+2. The next push (or **Actions → Deploy to GitHub Pages → Run workflow**) deploys the site.
+3. Your site is live at `https://shahrin014.github.io/google-sheet-flashcards/`.
+
+The Vite `base` is set to `./`, so the app also works under any other Pages path (`<user>.github.io/<repo>`).
 
 ## How scheduling works
 
