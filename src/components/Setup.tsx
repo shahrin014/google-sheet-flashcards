@@ -1,28 +1,56 @@
 import { useState } from 'react'
+import { Navigate, Outlet, useNavigate, useOutletContext } from 'react-router-dom'
+import {
+  Box,
+  Button,
+  Checkbox,
+  Group,
+  Paper,
+  Select,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core'
+import { useSettings } from '../lib/settings-context'
 import { fetchSheet, type SheetResult } from '../lib/sheet'
 
-interface Props {
+interface SetupProps {
   initialUrl: string
-  onSubmit: (settings: {
-    sheetUrl: string
-    frontCol: string
-    backCol: string
-    tagsCol: string
-    idCol: string
-  }) => void
 }
 
-export default function Setup({ initialUrl, onSubmit }: Props) {
+export interface StepContext {
+  url: string
+  setUrl: (v: string) => void
+  preview: SheetResult | null
+  loading: boolean
+  error: string | null
+  load: () => void
+  frontCols: string[]
+  setFrontCols: (v: string[]) => void
+  backCols: string[]
+  setBackCols: (v: string[]) => void
+  tagsCol: string | null
+  setTagsCol: (v: string | null) => void
+  idCol: string | null
+  setIdCol: (v: string | null) => void
+}
+
+const EXAMPLE =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vTOkSW-xF_ScbMBcch77qB5NZkUjEEGvl7-5Qh0FQBQ86-nZ54BFWntx1UevFIxmScCP7q1mSPly7c7/pub?gid=460290712&single=true&output=csv'
+
+export default function SetupLayout({ initialUrl }: SetupProps) {
   const [url, setUrl] = useState(initialUrl)
   const [preview, setPreview] = useState<SheetResult | null>(null)
-  const [frontCol, setFrontCol] = useState('')
-  const [backCol, setBackCol] = useState('')
-  const [tagsCol, setTagsCol] = useState('')
-  const [idCol, setIdCol] = useState('')
+  const [frontCols, setFrontCols] = useState<string[]>([])
+  const [backCols, setBackCols] = useState<string[]>([])
+  const [tagsCol, setTagsCol] = useState<string | null>(null)
+  const [idCol, setIdCol] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function handleLoad() {
+  async function load() {
     if (!url.trim()) {
       setError('Please paste a Google Sheets URL.')
       return
@@ -32,12 +60,10 @@ export default function Setup({ initialUrl, onSubmit }: Props) {
     try {
       const result = await fetchSheet(url, true)
       setPreview(result)
-      if (!frontCol && !backCol) {
-        setFrontCol(result.columns[0] ?? '')
-        setBackCol(result.columns[1] ?? '')
-        const tags = result.columns.find((c) => /^tags?$/i.test(c))
-        if (tags) setTagsCol(tags)
-      }
+      setFrontCols(result.columns.slice(0, 1))
+      setBackCols(result.columns.slice(1, 3))
+      const tags = result.columns.find((c) => /^tags?$/i.test(c))
+      setTagsCol(tags ?? null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load the sheet.')
       setPreview(null)
@@ -46,120 +72,207 @@ export default function Setup({ initialUrl, onSubmit }: Props) {
     }
   }
 
-  function handleStart() {
-    if (!preview) return
-    if (!frontCol || !backCol) {
-      setError('Choose one column for the front and one for the back.')
-      return
-    }
-    onSubmit({
-      sheetUrl: url.trim(),
-      frontCol,
-      backCol,
-      tagsCol,
-      idCol,
-    })
+  const context: StepContext = {
+    url,
+    setUrl: (v) => {
+      setUrl(v)
+      setError(null)
+    },
+    preview,
+    loading,
+    error,
+    load,
+    frontCols,
+    setFrontCols,
+    backCols,
+    setBackCols,
+    tagsCol,
+    setTagsCol,
+    idCol,
+    setIdCol,
   }
 
+  return <Outlet context={context} />
+}
+
+export function StepUrl() {
+  const ctx = useOutletContext<StepContext>()
+  const navigate = useNavigate()
+  const { url, setUrl, preview, loading, error, load } = ctx
+
   return (
-    <div className="setup">
-      <h1>Sheet Flashcards</h1>
-      <p className="sub">
-        Paste the URL of a Google Sheet, share it as “viewer”, and study its rows as Anki-style
-        flashcards with an FSRS scheduler.
-      </p>
+    <Box className="setup">
+      <Title order={1} ta="center">
+        Sheet Flashcards
+      </Title>
+      <Stack mt="md">
+        <Text c="dimmed" ta="center">
+          Paste the URL of a Google Sheet (shared as “viewer” or published to the web) to load a
+          preview. Then pick which columns become the front and back of your flashcards.
+        </Text>
 
-      <label className="field">
-        <span>Google Sheets URL</span>
-        <input
+        <TextInput
+          label="Google Sheets URL"
           value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv"
+          onChange={(e) => setUrl(e.currentTarget.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') void handleLoad()
+            if (e.key === 'Enter') void load()
           }}
+          placeholder="https://docs.google.com/spreadsheets/…"
         />
-      </label>
-      <button className="primary" disabled={loading} onClick={() => void handleLoad()}>
-        {loading ? 'Loading…' : preview ? 'Reload preview' : 'Load preview'}
-      </button>
 
-      {error && <p className="error">{error}</p>}
+        <Button disabled={loading} loading={loading} onClick={() => void load()}>
+          Load preview
+        </Button>
 
-      {preview && (
-        <>
-          <div className="columns">
-            <label className="field">
-              <span>Front column</span>
-              <select value={frontCol} onChange={(e) => setFrontCol(e.target.value)}>
-                {preview.columns.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="field">
-              <span>Back column</span>
-              <select value={backCol} onChange={(e) => setBackCol(e.target.value)}>
-                {preview.columns.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="field">
-              <span>Tags column (optional)</span>
-              <select value={tagsCol} onChange={(e) => setTagsCol(e.target.value)}>
-                <option value="">— none —</option>
-                {preview.columns.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="field">
-              <span>ID column (optional)</span>
-              <select value={idCol} onChange={(e) => setIdCol(e.target.value)}>
-                <option value="">— auto —</option>
-                {preview.columns.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+        {error && (
+          <Text c="red" size="sm">
+            {error}
+          </Text>
+        )}
 
-          <div className="preview">
-            <h2>Preview ({preview.rows.length} rows)</h2>
-            <table>
-              <thead>
-                <tr>
-                  {preview.columns.map((c) => (
-                    <th key={c}>{c}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {preview.rows.slice(0, 5).map((row, i) => (
-                  <tr key={i}>
-                    {preview.columns.map((c) => (
-                      <td key={c}>{row[c]}</td>
+        {preview && (
+          <>
+            <Paper withBorder radius="md" style={{ maxHeight: 360, overflow: 'auto' }} px="xs">
+              <Table.ScrollContainer minWidth={600}>
+                <Table striped highlightOnHover stickyHeader verticalSpacing="xs" fz="sm">
+                  <Table.Thead>
+                    <Table.Tr>
+                      {preview.columns.map((c) => (
+                        <Table.Th key={c}>{c}</Table.Th>
+                      ))}
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {preview.rows.map((row, i) => (
+                      <Table.Tr key={i}>
+                        {preview.columns.map((c) => (
+                          <Table.Td key={c}>{row[c]}</Table.Td>
+                        ))}
+                      </Table.Tr>
                     ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
+            </Paper>
 
-          <button className="primary" onClick={handleStart}>
+            <Button mt="xs" onClick={() => navigate('/setup/columns')}>
+              Continue to column mapping →
+            </Button>
+          </>
+        )}
+
+        <Text size="xs" c="dimmed" ta="center" mt="xs">
+          Try it: <a href={EXAMPLE}>{EXAMPLE}</a>
+        </Text>
+      </Stack>
+    </Box>
+  )
+}
+
+export function StepColumns() {
+  const ctx = useOutletContext<StepContext>()
+  const navigate = useNavigate()
+  const { setSettings } = useSettings()
+  const {
+    url,
+    preview,
+    frontCols,
+    setFrontCols,
+    backCols,
+    setBackCols,
+    tagsCol,
+    setTagsCol,
+    idCol,
+    setIdCol,
+  } = ctx
+
+  if (!preview) {
+    return <Navigate to="/setup" replace />
+  }
+
+  function start() {
+    if (!preview) return
+    if (frontCols.length === 0 || backCols.length === 0) return
+    setSettings({
+      sheetUrl: url.trim(),
+      frontCols,
+      backCols,
+      tagsCol: tagsCol ?? '',
+      idCol: idCol ?? '',
+    })
+    navigate('/study')
+  }
+
+  const columnOptions = preview.columns.map((c) => ({ value: c, label: c }))
+
+  return (
+    <Box className="setup">
+      <Title order={1} ta="center">
+        Sheet Flashcards
+      </Title>
+      <Stack mt="md">
+        <Text c="dimmed" ta="center">
+          This sheet has {preview.rows.length} rows. Choose which columns appear on each side of
+          the card.
+        </Text>
+
+        <Paper withBorder radius="md" p="md">
+          <Checkbox.Group
+            label="Front columns (each on its own line)"
+            value={frontCols}
+            onChange={setFrontCols}
+          >
+            <Group mt="xs">
+              {columnOptions.map((c) => (
+                <Checkbox key={c.value} value={c.value} label={c.label} />
+              ))}
+            </Group>
+          </Checkbox.Group>
+        </Paper>
+
+        <Paper withBorder radius="md" p="md">
+          <Checkbox.Group
+            label="Back columns (each on its own line)"
+            value={backCols}
+            onChange={setBackCols}
+          >
+            <Group mt="xs">
+              {columnOptions.map((c) => (
+                <Checkbox key={c.value} value={c.value} label={c.label} />
+              ))}
+            </Group>
+          </Checkbox.Group>
+        </Paper>
+
+        <Group grow>
+          <Select
+            label="ID column"
+            placeholder="— auto —"
+            clearable
+            data={columnOptions}
+            value={idCol}
+            onChange={setIdCol}
+          />
+          <Select
+            label="Tags column"
+            placeholder="— none —"
+            clearable
+            data={columnOptions}
+            value={tagsCol}
+            onChange={setTagsCol}
+          />
+        </Group>
+
+        <Group justify="space-between">
+          <Button variant="default" onClick={() => navigate('/setup')}>
+            ← Back
+          </Button>
+          <Button onClick={start} disabled={frontCols.length === 0 || backCols.length === 0}>
             Start studying
-          </button>
-        </>
-      )}
-    </div>
+          </Button>
+        </Group>
+      </Stack>
+    </Box>
   )
 }

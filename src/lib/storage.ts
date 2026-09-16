@@ -16,8 +16,8 @@ export interface CardDeck {
 
 export interface Settings {
   sheetUrl: string
-  frontCol: string
-  backCol: string
+  frontCols: string[]
+  backCols: string[]
   tagsCol: string
   idCol: string
 }
@@ -42,7 +42,19 @@ export function loadSettings(): Settings | null {
   const raw = localStorage.getItem(SETTINGS_KEY)
   if (!raw) return null
   try {
-    return JSON.parse(raw) as Settings
+    const parsed = JSON.parse(raw) as Partial<Settings> & {
+      backCol?: string
+      frontCol?: string
+    }
+    if (!parsed.sheetUrl) return null
+    if (!Array.isArray(parsed.frontCols)) {
+      parsed.frontCols = parsed.frontCol ? [parsed.frontCol] : []
+    }
+    if (!Array.isArray(parsed.backCols)) {
+      parsed.backCols = parsed.backCol ? [parsed.backCol] : []
+    }
+    if (!parsed.frontCols.length || !parsed.backCols.length) return null
+    return parsed as Settings
   } catch {
     return null
   }

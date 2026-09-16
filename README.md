@@ -8,11 +8,27 @@ A free, client-side flashcard app on GitHub Pages. Paste the URL of any Google S
 
 1. Open your Google Sheet with flashcard content.
 2. Optional but recommended: share it as “Anyone with the link → Viewer”.
-3. Copy the sheet's URL and paste it into Sheet Flashcards.
-4. Choose the column for the **Front**, the column for the **Back**, and optionally a **Tags** or **ID** column.
+3. Paste the sheet's URL into Sheet Flashcards and load the preview.
+4. Pick the **front columns** and **back columns** — each selected column becomes its own line on the card.
 5. Study: click or press `Space` to flip a card, then rate with `Again / Hard / Good / Easy` (keys `1–4`).
 
-You can share a deck by appending `?sheet=<encoded-sheet-url>` to the app's URL.
+### Configure via URL
+
+Everything is passed as URL parameters, so a deck can be opened directly by sharing a link:
+
+| Param  | Meaning                                   | Example                         |
+| ------ | ----------------------------------------- | ------------------------------- |
+| `sheet`| Google Sheets URL (encoded)              | `sheet=https%3A%2F%2Fdocs%2E…`  |
+| `front`| a front column — repeat to add more       | `front=Mandarin`                |
+| `back` | a back column — repeat to add more        | `back=English&back=Japanese`    |
+| `tags` | optional tags column                     | `tags=Tags`                     |
+| `id`   | optional stable-ID column                | `id=ID`                         |
+
+Example:
+
+```
+https://shahrin014.github.io/google-sheet-flashcards/?sheet=<encoded-url>&front=Mandarin&back=Mandarin%20(Pinyin)&back=English&back=Japanese
+```
 
 ### Sheet format
 
@@ -44,4 +60,4 @@ The Vite `base` is set to `./`, so the app also works under any other Pages path
 
 ## How scheduling works
 
-Each row maps to a card id (the ID column if you set one, otherwise a hash of front + back). New rows become new cards; existing cards keep their FSRS state so editing the sheet never resets progress. Every review is recorded and the FSRS due date is persisted in `localStorage` under `gsf.deck.*`.
+Each row maps to a card id (the ID column if you set one, otherwise a hash of the selected columns' values). New rows become new cards; existing cards keep their FSRS state so editing the sheet never resets progress. Rows where every front column **or** every back column is empty are skipped. Every review is recorded and the FSRS due date is persisted in `localStorage` under `gsf.deck.*`.

@@ -1,24 +1,47 @@
 import { useEffect } from 'react'
+import { Badge, Button, Group, Kbd, Paper, Text } from '@mantine/core'
 import { Rating } from '../lib/scheduler'
 
+interface CardSection {
+  label: string
+  value: string
+}
+
 interface Props {
-  front: string
-  back: string
+  front: CardSection[]
+  back: CardSection[]
   tags: string[]
   revealed: boolean
   isNew: boolean
+  ratings: { rating: Rating; label: string }[]
   onReveal: () => void
   onRate: (rating: Rating) => void
 }
 
-const RATINGS: { rating: Rating; label: string; key: string }[] = [
-  { rating: Rating.Again, label: 'Again', key: '1' },
-  { rating: Rating.Hard, label: 'Hard', key: '2' },
-  { rating: Rating.Good, label: 'Good', key: '3' },
-  { rating: Rating.Easy, label: 'Easy', key: '4' },
-]
+const RATING_NAMES: Record<number, string> = {
+  [Rating.Again]: 'Again',
+  [Rating.Hard]: 'Hard',
+  [Rating.Good]: 'Good',
+  [Rating.Easy]: 'Easy',
+}
 
-export default function Card({ front, back, tags, revealed, isNew, onReveal, onRate }: Props) {
+const RATING_COLORS: Record<number, string> = {
+  [Rating.Again]: 'red',
+  [Rating.Hard]: 'orange',
+  [Rating.Good]: 'green',
+  [Rating.Easy]: 'indigo',
+}
+
+export default function Card({
+  front,
+  back,
+  tags,
+  revealed,
+  isNew,
+  ratings,
+  onReveal,
+  onRate,
+}: Props) {
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.repeat) return
@@ -27,48 +50,81 @@ export default function Card({ front, back, tags, revealed, isNew, onReveal, onR
         e.preventDefault()
         if (!revealed) onReveal()
       } else if (revealed && ['1', '2', '3', '4'].includes(code)) {
-        onRate(RATINGS[Number(code) - 1].rating)
+        onRate(ratings[Number(code) - 1].rating)
       }
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [revealed, onReveal, onRate])
+  }, [revealed, ratings, onReveal, onRate])
+
+  function renderSections(sections: CardSection[]) {
+    return (
+      <div className="item-list">
+        {sections.map(({ label, value }) => (
+          <div key={label} className="item">
+            <span className="item-label">{label}</span>
+            <span className="item-value">{value}</span>
+          </div>
+        ))}
+      </div>
+    )
+  }
 
   return (
-    <section className="card-stage" onClick={!revealed ? onReveal : undefined}>
+    <section className="card-stage">
       {tags.length > 0 && (
-        <div className="tags">
+        <Group gap="xs">
           {tags.map((t) => (
-            <span key={t} className="tag">
+            <Badge key={t} variant="light" color="indigo">
               {t}
-            </span>
+            </Badge>
           ))}
-        </div>
+        </Group>
       )}
 
-      <div className={`flashcard ${revealed ? 'revealed' : ''}`}>
-        <div className="flashcard-face front">
-          <div className="content">{front}</div>
-        </div>
-        <div className="flashcard-face back">
-          {isNew ? <span className="badge">New</span> : null}
-          <div className="content">{back}</div>
-        </div>
-      </div>
+      <Paper
+        shadow="md"
+        radius="lg"
+        withBorder
+        className={`flashcard ${revealed ? 'revealed' : ''}`}
+        onClick={!revealed ? onReveal : undefined}
+      >
+        {revealed && isNew && (
+          <Badge variant="light" color="green" className="new-badge">
+            New
+          </Badge>
+        )}
+        {revealed ? renderSections(back) : renderSections(front)}
+      </Paper>
 
-      <p className="hint">
-        {revealed ? 'Press 1–4 or click a button to rate' : 'Click or press space to reveal'}
-      </p>
+      <Text size="sm" c="dimmed">
+        {revealed ? (
+          <>
+            Press <Kbd>1</Kbd>–<Kbd>4</Kbd> or click a button to rate
+          </>
+        ) : (
+          <>
+            Click the card or press <Kbd>Space</Kbd> to reveal
+          </>
+        )}
+      </Text>
 
       {revealed && (
-        <div className="ratings">
-          {RATINGS.map(({ rating, label, key }) => (
-            <button key={rating} className={`rate rate-${rating}`} onClick={() => onRate(rating)}>
-              <kbd>{key}</kbd>
+        <Group gap="sm">
+          {ratings.map(({ rating, label }, i) => (
+            <Button
+              key={rating}
+              color={RATING_COLORS[rating]}
+              variant="light"
+              size="lg"
+              leftSection={<Kbd>{String(i + 1)}</Kbd>}
+              title={RATING_NAMES[rating]}
+              onClick={() => onRate(rating)}
+            >
               {label}
-            </button>
+            </Button>
           ))}
-        </div>
+        </Group>
       )}
     </section>
   )
