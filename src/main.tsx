@@ -9,7 +9,9 @@ import '@mantine/core/styles.css'
 import './index.css'
 import App from './App.tsx'
 import IndexRedirect from './components/IndexRedirect.tsx'
-import SetupLayout, { StepColumns, StepUrl } from './components/Setup.tsx'
+import SetupLayout from './components/SetupLayout.tsx'
+import StepUrl from './components/StepUrl.tsx'
+import StepColumns from './components/StepColumns.tsx'
 
 const params = new URLSearchParams(window.location.search)
 const urlSettings = paramsToSettings(params)

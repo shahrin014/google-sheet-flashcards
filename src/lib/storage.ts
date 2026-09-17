@@ -34,8 +34,15 @@ function revive(card: Card): Card {
   return { ...card, due: new Date(card.due) }
 }
 
-export function deckKey(sheetUrl: string): string {
-  return hashString(sheetUrl.toLowerCase())
+export function deckKey(settings: Settings): string {
+  const combo = [
+    settings.sheetUrl.toLowerCase(),
+    ...settings.frontCols,
+    ...settings.backCols,
+    settings.tagsCol,
+    settings.idCol,
+  ].join('\u0000')
+  return hashString(combo)
 }
 
 export function loadSettings(): Settings | null {
@@ -54,7 +61,13 @@ export function loadSettings(): Settings | null {
       parsed.backCols = parsed.backCol ? [parsed.backCol] : []
     }
     if (!parsed.frontCols.length || !parsed.backCols.length) return null
-    return parsed as Settings
+    return {
+      sheetUrl: parsed.sheetUrl,
+      frontCols: parsed.frontCols,
+      backCols: parsed.backCols,
+      tagsCol: parsed.tagsCol ?? '',
+      idCol: parsed.idCol ?? '',
+    }
   } catch {
     return null
   }
