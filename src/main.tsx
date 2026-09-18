@@ -12,6 +12,7 @@ import IndexRedirect from './components/IndexRedirect.tsx'
 import SetupLayout from './components/SetupLayout.tsx'
 import StepUrl from './components/StepUrl.tsx'
 import StepColumns from './components/StepColumns.tsx'
+import { registerSW } from 'virtual:pwa-register'
 
 const params = new URLSearchParams(window.location.search)
 const urlSettings = paramsToSettings(params)
@@ -24,6 +25,16 @@ const theme = createTheme({
   primaryColor: 'indigo',
   defaultRadius: 'md',
 })
+
+if ('serviceWorker' in navigator) {
+  let refreshing = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return
+    refreshing = true
+    window.location.reload()
+  })
+  registerSW({ immediate: true })
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
