@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchSheet, normalizeSheetUrl } from './sheet'
+import { fetchSheet, fetchSheetTitle, normalizeSheetUrl } from './sheet'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -84,5 +84,34 @@ describe('fetchSheet', () => {
   it('rejects HTML responses (private sheets)', async () => {
     mockFetch('<!DOCTYPE html><html></html>')
     await expect(fetchSheet('https://example.com/private?format=csv')).rejects.toThrow(/HTML page/)
+  })
+})
+
+describe('fetchSheetTitle', () => {
+  function mockFetch(text: string, ok = true) {
+    const fn = vi.fn(async () => ({ ok, status: ok ? 200 : 404, text: async () => text }))
+    vi.stubGlobal('fetch', fn)
+    return fn
+  }
+
+  it('extracts the sheet title from the published HTML page', async () => {
+    mockFetch('<!doctype html><title>French Vocab - Google Sheets</title><body></body>')
+    await expect(
+      fetchSheetTitle('https://docs.google.com/spreadsheets/d/e/keypub/pub?gid=1'),
+    ).resolves.toBe('French Vocab')
+  })
+
+  it('returns null for a failed request', async () => {
+    mockFetch('', false)
+    await expect(
+      fetchSheetTitle('https://docs.google.com/spreadsheets/d/e/keypub/pub?gid=1'),
+    ).resolves.toBeNull()
+  })
+
+  it('returns null when the page has no title', async () => {
+    mockFetch('<html><body>no title here</body></html>')
+    await expect(
+      fetchSheetTitle('https://docs.google.com/spreadsheets/d/e/keypub/pub?gid=1'),
+    ).resolves.toBeNull()
   })
 })

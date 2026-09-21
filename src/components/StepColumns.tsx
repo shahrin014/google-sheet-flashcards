@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Navigate, useNavigate, useOutletContext } from 'react-router-dom'
 import {
   Box,
@@ -8,9 +9,11 @@ import {
   Select,
   Stack,
   Text,
+  TextInput,
   Title,
 } from '@mantine/core'
 import { useSettings } from '../lib/settings-context'
+import { saveActivePresetName, savePreset, type Settings } from '../lib/storage'
 import type { StepContext } from '../lib/setup-context'
 
 export default function StepColumns() {
@@ -20,6 +23,7 @@ export default function StepColumns() {
   const {
     url,
     preview,
+    sheetName,
     frontCols,
     setFrontCols,
     backCols,
@@ -30,6 +34,14 @@ export default function StepColumns() {
     setIdCol,
   } = ctx
 
+  const frontLabel = frontCols[0] ?? 'front'
+  const backLabel = backCols[0] ?? 'back'
+  const defaultPresetName = [sheetName, `${frontLabel} → ${backLabel}`]
+    .filter(Boolean)
+    .join(' · ')
+  const [override, setOverride] = useState<string | null>(null)
+  const presetName = override ?? defaultPresetName
+
   if (!preview) {
     return <Navigate to="/setup" replace />
   }
@@ -37,13 +49,17 @@ export default function StepColumns() {
   function start() {
     if (!preview) return
     if (frontCols.length === 0 || backCols.length === 0) return
-    setSettings({
+    const next: Settings = {
       sheetUrl: url.trim(),
       frontCols,
       backCols,
       tagsCol: tagsCol ?? '',
       idCol: idCol ?? '',
-    })
+    }
+    setSettings(next)
+    const named = presetName.trim() || defaultPresetName
+    savePreset(named, next)
+    saveActivePresetName(named)
     navigate('/study')
   }
 
@@ -106,6 +122,16 @@ export default function StepColumns() {
             onChange={setTagsCol}
           />
         </Group>
+
+        <TextInput
+          label="Preset name"
+          description="Auto-filled from the sheet name and columns — edit if you like."
+          value={presetName}
+          onChange={(e) => setOverride(e.currentTarget.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') start()
+          }}
+        />
 
         <Group justify="space-between">
           <Button variant="default" onClick={() => navigate('/setup')}>

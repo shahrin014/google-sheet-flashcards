@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
-import { fetchSheet, type SheetResult } from '../lib/sheet'
+import { fetchSheet, fetchSheetTitle, type SheetResult } from '../lib/sheet'
 import type { StepContext } from '../lib/setup-context'
 
 interface SetupLayoutProps {
@@ -10,6 +10,7 @@ interface SetupLayoutProps {
 export default function SetupLayout({ initialUrl }: SetupLayoutProps) {
   const [url, setUrl] = useState(initialUrl)
   const [preview, setPreview] = useState<SheetResult | null>(null)
+  const [sheetName, setSheetName] = useState('')
   const [frontCols, setFrontCols] = useState<string[]>([])
   const [backCols, setBackCols] = useState<string[]>([])
   const [tagsCol, setTagsCol] = useState<string | null>(null)
@@ -31,6 +32,7 @@ export default function SetupLayout({ initialUrl }: SetupLayoutProps) {
       setBackCols(result.columns.slice(1, 3))
       const tags = result.columns.find((c) => /^tags?$/i.test(c))
       setTagsCol(tags ?? null)
+      setSheetName((await fetchSheetTitle(url)) ?? '')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load the sheet.')
       setPreview(null)
@@ -46,6 +48,7 @@ export default function SetupLayout({ initialUrl }: SetupLayoutProps) {
       setError(null)
     },
     preview,
+    sheetName,
     loading,
     error,
     load,

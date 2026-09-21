@@ -4,6 +4,7 @@ export interface StepContext {
   url: string
   setUrl: (v: string) => void
   preview: SheetResult | null
+  sheetName: string
   loading: boolean
   error: string | null
   load: () => void

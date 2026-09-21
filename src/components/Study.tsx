@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { State } from 'ts-fsrs'
 import {
@@ -5,7 +6,9 @@ import {
   Affix,
   Alert,
   Badge,
+  Burger,
   Button,
+  Divider,
   Group,
   Loader,
   Menu,
@@ -13,6 +16,7 @@ import {
   Paper,
   Stack,
   Text,
+  TextInput,
   Title,
 } from '@mantine/core'
 import '../App.css'
@@ -43,13 +47,47 @@ export default function Study() {
     setRevealed,
     clearOpen,
     notice,
+    presets,
+    activePreset,
+    presetOpen,
+    setPresetOpen,
+    handleSwitchPreset,
+    handleDeletePreset,
+    handleSaveCurrentPreset,
   } = useDeckState()
 
   const navigate = useNavigate()
+  const [newPresetName, setNewPresetName] = useState('')
+  const [menuOpen, setMenuOpen] = useState(false)
 
   return (
     <div className="app">
       <header className="topbar">
+        <Group gap="xs">
+          <Menu shadow="md" width={220} opened={menuOpen} onChange={setMenuOpen}>
+            <Menu.Target>
+              <Burger
+                size="md"
+                opened={menuOpen}
+                aria-label="Open menu"
+                aria-haspopup="menu"
+                title="Menu"
+              />
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item onClick={() => navigate('/presets')}>Change sheet</Menu.Item>
+              <Menu.Item onClick={() => void handleCopyShareLink()}>Copy share link</Menu.Item>
+              <Menu.Item onClick={() => setPresetOpen(true)}>Switch preset</Menu.Item>
+              <Menu.Divider />
+              <Menu.Item color="orange" onClick={handleResetProgress}>
+                Reset progress
+              </Menu.Item>
+              <Menu.Item color="red" onClick={handleClearAll}>
+                Clear memory
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+        </Group>
         <Title order={3} className="topbar-title">
           Sheet Flashcards
         </Title>
@@ -63,36 +101,6 @@ export default function Study() {
           <Badge variant="light" color="teal" title="Reviewed today">
             today {reviewedToday}
           </Badge>
-        </Group>
-        <Group gap="xs">
-          <Menu shadow="md" width={220}>
-            <Menu.Target>
-              <ActionIcon
-                variant="default"
-                size="lg"
-                aria-label="Open menu"
-                aria-haspopup="menu"
-                title="Menu"
-              >
-                <Group gap={3} className="burger" wrap="nowrap">
-                  <span />
-                  <span />
-                  <span />
-                </Group>
-              </ActionIcon>
-            </Menu.Target>
-            <Menu.Dropdown>
-              <Menu.Item onClick={() => navigate('/setup')}>Change sheet</Menu.Item>
-              <Menu.Item onClick={() => void handleCopyShareLink()}>Copy share link</Menu.Item>
-              <Menu.Divider />
-              <Menu.Item color="orange" onClick={handleResetProgress}>
-                Reset progress
-              </Menu.Item>
-              <Menu.Item color="red" onClick={handleClearAll}>
-                Clear memory
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
         </Group>
       </header>
 
@@ -148,6 +156,80 @@ export default function Study() {
           />
         )}
       </main>
+
+      <Modal
+        opened={presetOpen}
+        onClose={() => setPresetOpen(false)}
+        title="Presets"
+        centered
+        closeOnClickOutside
+      >
+        <Stack gap="sm">
+          {presets.length === 0 && (
+            <Text size="sm" c="dimmed">
+              No presets saved yet. Name one on the setup screen to save a sheet and column
+              mapping.
+            </Text>
+          )}
+          {presets.map((p) => (
+            <Group key={p.name} wrap="nowrap" justify="space-between">
+              <Group wrap="nowrap" gap="sm">
+                <Text size="sm" fw={p.name === activePreset ? 700 : 400}>
+                  {p.name}
+                </Text>
+                {p.name === activePreset && (
+                  <Badge variant="light" color="teal" size="xs">
+                    active
+                  </Badge>
+                )}
+              </Group>
+              <Group wrap="nowrap" gap="xs">
+                <Button
+                  size="compact-xs"
+                  variant="default"
+                  disabled={p.name === activePreset}
+                  onClick={() => handleSwitchPreset(p.name)}
+                >
+                  Use
+                </Button>
+                <ActionIcon
+                  variant="subtle"
+                  color="red"
+                  size="sm"
+                  aria-label={`Delete preset ${p.name}`}
+                  onClick={() => handleDeletePreset(p.name)}
+                >
+                  ✕
+                </ActionIcon>
+              </Group>
+            </Group>
+          ))}
+          <Divider />
+          <Group wrap="nowrap">
+            <TextInput
+              placeholder="Save current sheet as preset…"
+              w="100%"
+              value={newPresetName}
+              onChange={(e) => setNewPresetName(e.currentTarget.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newPresetName.trim()) {
+                  handleSaveCurrentPreset(newPresetName.trim())
+                  setNewPresetName('')
+                }
+              }}
+            />
+            <Button
+              disabled={!newPresetName.trim()}
+              onClick={() => {
+                handleSaveCurrentPreset(newPresetName.trim())
+                setNewPresetName('')
+              }}
+            >
+              Save
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
       <Modal
         opened={clearOpen}

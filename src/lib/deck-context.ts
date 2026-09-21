@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import { type CardDeck } from './storage'
+import { type CardDeck, type Preset } from './storage'
 
 export interface DeckContextValue {
   deck: CardDeck
@@ -31,6 +31,13 @@ export interface DeckContextValue {
   clearOpen: boolean
   setClearOpen: (v: boolean) => void
   notice: { kind: 'success' | 'error'; text: string } | null
+  presets: Preset[]
+  activePreset: string | null
+  presetOpen: boolean
+  setPresetOpen: (v: boolean) => void
+  handleSwitchPreset: (name: string) => void
+  handleDeletePreset: (name: string) => void
+  handleSaveCurrentPreset: (name: string) => void
 }
 
 export const DeckContext = createContext<DeckContextValue | null>(null)

@@ -14,9 +14,15 @@ import { fetchSheet, type SheetResult } from '../lib/sheet'
 import {
   clearDeck,
   deckKey,
+  deletePreset,
+  loadActivePresetName,
   loadDeck,
+  loadPresets,
+  saveActivePresetName,
   saveDeck,
+  savePreset,
   type CardDeck,
+  type Preset,
   type ReviewLog,
   type Settings,
 } from '../lib/storage'
@@ -56,7 +62,7 @@ async function copyToClipboard(text: string): Promise<boolean> {
 }
 
 export function DeckProvider({ children }: { children: ReactNode }) {
-  const { settings, clearAll } = useSettings()
+  const { settings, setSettings, clearAll } = useSettings()
   const navigate = useNavigate()
 
   const [sheet, setSheet] = useState<SheetResult | null>(null)
@@ -75,6 +81,9 @@ export function DeckProvider({ children }: { children: ReactNode }) {
   const [clearOpen, setClearOpen] = useState(false)
   const [notice, setNotice] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
   const noticeTimer = useRef<number | undefined>(undefined)
+  const [presets, setPresets] = useState<Preset[]>(() => loadPresets())
+  const [activePreset, setActivePreset] = useState<string | null>(() => loadActivePresetName())
+  const [presetOpen, setPresetOpen] = useState(false)
 
   const scheduler = useMemo(() => createScheduler(), [])
 
@@ -237,6 +246,40 @@ export function DeckProvider({ children }: { children: ReactNode }) {
     setClearOpen(false)
   }, [])
 
+  const handleSwitchPreset = useCallback(
+    (name: string) => {
+      const preset = presets.find((p) => p.name === name)
+      if (!preset) return
+      saveActivePresetName(name)
+      setSettings(preset.settings)
+      setPresetOpen(false)
+    },
+    [presets, setSettings],
+  )
+
+  const handleDeletePreset = useCallback(
+    (name: string) => {
+      deletePreset(name)
+      setPresets(loadPresets())
+      setActivePreset((current) => (current === name ? null : current))
+    },
+    [],
+  )
+
+  const handleSaveCurrentPreset = useCallback(
+    (name: string) => {
+      if (!settings) return
+      const trimmed = name.trim()
+      if (!trimmed) return
+      savePreset(trimmed, settings)
+      saveActivePresetName(trimmed)
+      setPresets(loadPresets())
+      setActivePreset(trimmed)
+      setPresetOpen(false)
+    },
+    [settings],
+  )
+
   const handleCopyShareLink = useCallback(async () => {
     if (!settings) return
     const params = settingsToParams(settings)
@@ -277,6 +320,13 @@ export function DeckProvider({ children }: { children: ReactNode }) {
     clearOpen,
     setClearOpen,
     notice,
+    presets,
+    activePreset,
+    presetOpen,
+    setPresetOpen,
+    handleSwitchPreset,
+    handleDeletePreset,
+    handleSaveCurrentPreset,
   }
 
   return <DeckContext.Provider value={contextValue}>{children}</DeckContext.Provider>

@@ -12,6 +12,7 @@ import IndexRedirect from './components/IndexRedirect.tsx'
 import SetupLayout from './components/SetupLayout.tsx'
 import StepUrl from './components/StepUrl.tsx'
 import StepColumns from './components/StepColumns.tsx'
+import Presets from './components/Presets.tsx'
 import { registerSW } from 'virtual:pwa-register'
 
 const params = new URLSearchParams(window.location.search)
@@ -44,6 +45,7 @@ createRoot(document.getElementById('root')!).render(
           <Routes>
             <Route path="/" element={<IndexRedirect />} />
             <Route path="/study" element={<App />} />
+            <Route path="/presets" element={<Presets />} />
             <Route path="/setup" element={<SetupLayout initialUrl={initial.initialUrl} />}>
               <Route index element={<StepUrl />} />
               <Route path="columns" element={<StepColumns />} />

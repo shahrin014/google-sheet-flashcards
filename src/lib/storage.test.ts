@@ -3,9 +3,14 @@ import {
   clearDeck,
   clearSettings,
   deckKey,
+  deletePreset,
+  loadActivePresetName,
   loadDeck,
+  loadPresets,
   loadSettings,
+  saveActivePresetName,
   saveDeck,
+  savePreset,
   saveSettings,
   type CardDeck,
   type Settings,
@@ -105,6 +110,50 @@ describe('deckKey', () => {
     expect(deckKey(settings)).not.toBe(deckKey({ ...settings, backCols: ['Meaning', 'Example'] }))
     expect(deckKey(settings)).not.toBe(deckKey({ ...settings, tagsCol: 'X' }))
     expect(deckKey(settings)).not.toBe(deckKey({ ...settings, idCol: 'Id' }))
+  })
+})
+
+describe('presets', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', new MemoryStorage())
+  })
+
+  it('round-trips saved presets in insertion order', () => {
+    savePreset('French', settings)
+    savePreset('Kanji', { ...settings, sheetUrl: 'https://example.com/kanji' })
+    expect(loadPresets().map((p) => p.name)).toEqual(['French', 'Kanji'])
+    expect(loadPresets()[0].settings).toEqual(settings)
+  })
+
+  it('replaces a preset with the same name in place', () => {
+    savePreset('French', settings)
+    const updated = { ...settings, frontCols: ['Mot'] }
+    savePreset('French', updated)
+    const presets = loadPresets()
+    expect(presets).toHaveLength(1)
+    expect(presets[0].settings).toEqual(updated)
+  })
+
+  it('tracks the active preset name', () => {
+    expect(loadActivePresetName()).toBeNull()
+    saveActivePresetName('French')
+    expect(loadActivePresetName()).toBe('French')
+    saveActivePresetName(null)
+    expect(loadActivePresetName()).toBeNull()
+  })
+
+  it('deletes a preset and clears the active name if it was active', () => {
+    savePreset('French', settings)
+    savePreset('Kanji', { ...settings, sheetUrl: 'https://example.com/kanji' })
+    saveActivePresetName('French')
+    deletePreset('French')
+    expect(loadPresets().map((p) => p.name)).toEqual(['Kanji'])
+    expect(loadActivePresetName()).toBeNull()
+  })
+
+  it('ignores corrupt preset data', () => {
+    localStorage.setItem('gsf.presets.v1', '{nope')
+    expect(loadPresets()).toEqual([])
   })
 })
 

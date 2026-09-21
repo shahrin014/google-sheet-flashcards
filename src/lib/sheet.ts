@@ -69,3 +69,22 @@ export function fetchSheet(inputUrl: string, force = false): Promise<SheetResult
   cache.set(url, promise)
   return promise
 }
+
+export async function fetchSheetTitle(inputUrl: string): Promise<string | null> {
+  try {
+    const url = normalizeSheetUrl(inputUrl)
+    let page = url
+      .replace('output=csv', 'output=html')
+      .replace('/export?', '/edit?')
+      .replace(/\/export(?=$)/, '/edit?output=html')
+    if (!page.includes('?')) page += '?output=html'
+    const res = await fetch(page, { mode: 'cors' })
+    if (!res.ok) return null
+    const text = await res.text()
+    const m = /<title[^>]*>([^<]*)<\/title>/i.exec(text)
+    if (!m) return null
+    return m[1].replace(/\s*-\s*Google\s+Sheets\s*$/i, '').trim() || null
+  } catch {
+    return null
+  }
+}
