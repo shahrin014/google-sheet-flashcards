@@ -1,0 +1,29 @@
+schema: spec-driven
+
+context: |
+  Tech stack: TypeScript 6, React 19, Vite 8, Mantine 9, react-router-dom 7 (HashRouter),
+  ts-fsrs for spaced repetition, Papa Parse for CSV, vitest for tests, oxlint for linting.
+  The app is a fully client-side single-page app deployed as static assets to GitHub Pages.
+  There is no server, no database, no API key, and no authentication. Google Sheets sharing
+  permissions are the only access control.
+  All user data (settings, presets, scheduling state) lives in browser localStorage under keys
+  prefixed `gsf.` and is versioned (`.v1` suffix).
+  Source layout: pure logic in `src/lib/*.ts` (one test file per module), UI in
+  `src/components/*.tsx`, routing in `src/main.tsx`.
+  Specs describe observable behavior only. Library choice, file layout, and internal function
+  names belong in design.md, not spec.md.
+
+rules:
+  proposal:
+    - State explicitly whether the change adds, modifies, or retires a capability.
+    - Call out any change to the `gsf.` localStorage key layout as a migration risk.
+  specs:
+    - Use Given/When/Then scenario bullets under every `### Requirement:`.
+    - Name at least the unhappy path: fetch failure, invalid configuration, empty deck.
+    - Prefer behavior a test in `src/lib/*.test.ts` could assert.
+    - Keep new capabilities in the flat kebab-case layout already used under `openspec/specs/`.
+  design:
+    - Say which of `src/lib/` or `src/components/` the change lands in.
+  tasks:
+    - Pair each behavior change with the test that verifies it, in the same task group.
+    - State the verification command (`npm run test`, `npm run lint`, `npm run build`).
