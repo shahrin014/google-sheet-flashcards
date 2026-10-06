@@ -12,6 +12,21 @@ dist
 dist-ssr
 *.local
 
+# Python (dictionary/ tooling)
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+.eggs/
+build/
+
+# Google service-account credentials — never commit
+service-account*.json
+service_account*.json
+*-service-account.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

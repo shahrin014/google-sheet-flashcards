@@ -1,29 +1,42 @@
 schema: spec-driven
 
 context: |
-  Tech stack: TypeScript 6, React 19, Vite 8, Mantine 9, react-router-dom 7 (HashRouter),
+  Two toolchains live in this repo, side by side.
+
+  Web app — TypeScript 6, React 19, Vite 8, Mantine 9, react-router-dom 7 (HashRouter),
   ts-fsrs for spaced repetition, Papa Parse for CSV, vitest for tests, oxlint for linting.
-  The app is a fully client-side single-page app deployed as static assets to GitHub Pages.
-  There is no server, no database, no API key, and no authentication. Google Sheets sharing
-  permissions are the only access control.
-  All user data (settings, presets, scheduling state) lives in browser localStorage under keys
-  prefixed `gsf.` and is versioned (`.v1` suffix).
-  Source layout: pure logic in `src/lib/*.ts` (one test file per module), UI in
+  Fully client-side, deployed as static assets to GitHub Pages. No server, no database,
+  no API key, no authentication; Google Sheets sharing permissions are the only access
+  control. All user data (settings, presets, scheduling state) lives in browser
+  localStorage under keys prefixed `gsf.` and versioned with a `.v1` suffix.
+  Pure logic lives in `src/lib/*.ts` (one test file per module), UI in
   `src/components/*.tsx`, routing in `src/main.tsx`.
-  Specs describe observable behavior only. Library choice, file layout, and internal function
-  names belong in design.md, not spec.md.
+
+  Python tooling — everything Python is self-contained in the `dictionary/` folder and
+  never touches the web app. Python 3.12+, pandas for tabular work, gspread + google-auth
+  as the Google Sheets transport, pytest for tests, virtualenv in `dictionary/.venv`.
+  Source in `dictionary/src/word_dictionary/`, tests in `dictionary/tests/`.
+  The tool is driven by AI agents through prompts, so every command is non-interactive,
+  prints JSON on stdout, and exits non-zero on failure. The tool never hard-codes column
+  names: the agent reads the header and passes the column mapping in.
+
+  Specs describe observable behavior only. Library choice, file layout, and internal
+  function names belong in design.md, not spec.md.
 
 rules:
   proposal:
-    - State explicitly whether the change adds, modifies, or retires a capability.
-    - Call out any change to the `gsf.` localStorage key layout as a migration risk.
+    - "State explicitly whether the change adds, modifies, or retires a capability."
+    - "Call out any change to the `gsf.` localStorage key layout as a migration risk."
+    - "Say which toolchain the change belongs to: the web app or the `dictionary/` Python tooling."
   specs:
-    - Use Given/When/Then scenario bullets under every `### Requirement:`.
-    - Name at least the unhappy path: fetch failure, invalid configuration, empty deck.
-    - Prefer behavior a test in `src/lib/*.test.ts` could assert.
-    - Keep new capabilities in the flat kebab-case layout already used under `openspec/specs/`.
+    - "Use Given/When/Then scenario bullets under every `### Requirement:`."
+    - "Cover the unhappy path too — for the web app that is fetch failure, invalid configuration, empty deck; for the Python tooling it is refused writes, missing credentials, ambiguous or missing targets."
+    - "Prefer behavior a test could assert: `src/lib/*.test.ts` for the web app, `dictionary/tests/test_*.py` for the tooling."
+    - "Keep capabilities in the flat kebab-case layout already used under `openspec/specs/`."
+    - "Never require a column name in a requirement; the agent supplies the column mapping at runtime."
   design:
-    - Say which of `src/lib/` or `src/components/` the change lands in.
+    - "For web app changes, say which of `src/lib/` or `src/components/` the change lands in."
+    - "For tooling changes, say which of `dictionary/src/` or `dictionary/tests/` it lands in, and name the dependency it needs."
   tasks:
-    - Pair each behavior change with the test that verifies it, in the same task group.
-    - State the verification command (`npm run test`, `npm run lint`, `npm run build`).
+    - "Pair each behavior change with the test that verifies it, in the same task group."
+    - "State the verification command: `npm run test`, `npm run lint`, `npm run build` for the web app; `cd dictionary && .venv/bin/python -m pytest` for the tooling."
