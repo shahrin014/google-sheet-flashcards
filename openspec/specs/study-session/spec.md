@@ -110,7 +110,7 @@ The system SHALL ignore auto-repeating key events so that holding Space or a num
 - THEN only the initial key press takes effect
 
 ### Requirement: Rating interval labelling
-Rating buttons SHALL display the interval each rating would produce for the current card, and SHALL carry the rating's name.
+Rating buttons SHALL display the interval each rating would produce for the current card — the exact interval that pressing the button applies — and SHALL carry the rating's name.
 
 #### Scenario: Intervals shown per rating
 - GIVEN a revealed current card
