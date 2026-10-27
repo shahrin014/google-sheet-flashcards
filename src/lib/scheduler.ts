@@ -1,6 +1,18 @@
 import { createEmptyCard, fsrs, Rating, type Card, type FSRS } from 'ts-fsrs'
 
+/**
+ * FSRS-6 scheduling using ts-fsrs with 95% desired retention (the library
+ * default is 90%) and otherwise default parameters: 1m/10m learning steps, a
+ * 10m relearning step, fuzzing off, and a 36500-day maximum interval.
+ * Stability is the interval at 90% recall; each rating updates stability and
+ * difficulty, and the next due time is derived from stability.
+ *
+ * See docs/scheduling.md for the formulas and a worked example.
+ */
 export { Rating }
+
+/** Desired recall probability; 95% trades more reviews for fewer lapses. */
+const REQUEST_RETENTION = 0.95
 
 const MINUTE = 60_000
 const HOUR = 3_600_000
@@ -14,14 +26,16 @@ export interface RatingOutcome {
   card: Card
 }
 
+/** One scheduler shared by the whole session, targeting 95% retention. */
 export function createScheduler(): FSRS {
-  return fsrs()
+  return fsrs({ request_retention: REQUEST_RETENTION })
 }
 
 export function newCard(): Card {
   return createEmptyCard()
 }
 
+/** Compute all four rating outcomes once, from a single reference instant. */
 export function calculateOutcomes(scheduler: FSRS, card: Card, now: Date): RatingOutcome[] {
   const scheduling = scheduler.repeat(card, now)
   const map = scheduling as unknown as Record<number, { card: Card }>
@@ -31,6 +45,7 @@ export function calculateOutcomes(scheduler: FSRS, card: Card, now: Date): Ratin
   })
 }
 
+/** Coarsest label; `formatIntervals` retries with finer units on collisions. */
 function formatCoarse(ms: number): string {
   if (ms < MINUTE) return '<1m'
   if (ms < HOUR) return `${Math.round(ms / MINUTE)}m`
@@ -87,6 +102,10 @@ function labelsAreDistinct(durations: number[], labels: string[]): boolean {
   return true
 }
 
+/**
+ * Format a card's four intervals together, using the coarsest set of labels
+ * that keeps intervals at least a minute apart distinct.
+ */
 export function formatIntervals(from: Date, dues: Date[]): string[] {
   const durations = dues.map((due) => due.getTime() - from.getTime())
   for (const formatter of INTERVAL_FORMATTERS) {

@@ -45,6 +45,7 @@ npm install
 npm run dev      # dev server
 npm run build    # type-check + production build → dist/
 npm run preview  # serve the production build
+npm run test     # unit tests (vitest)
 npm run lint     # oxlint
 ```
 
@@ -61,3 +62,7 @@ The Vite `base` is set to `./`, so the app also works under any other Pages path
 ## How scheduling works
 
 Each row maps to a card id (the ID column if you set one, otherwise a hash of the selected columns' values). New rows become new cards; existing cards keep their FSRS state so editing the sheet never resets progress. Rows where every front column **or** every back column is empty are skipped. Every review is recorded and the FSRS due date is persisted in `localStorage` under `gsf.deck.*`.
+
+Scheduling is delegated to `ts-fsrs` 5.4.2 (FSRS-6) with **95% desired retention** (the library default is 90%) and otherwise default settings: `1m`/`10m` learning steps, a `10m` relearning step, no fuzzing, and a 36,500-day maximum interval. Each rating button shows the interval that rating would apply. On a card in long-term review, `Again` returns it to the 10-minute relearning step, while `Hard`, `Good`, and `Easy` schedule the next long-term review.
+
+See [docs/scheduling.md](docs/scheduling.md) for the full algorithm, formulas, the worked three-Good example, and the interval-formatting rules.

@@ -179,4 +179,29 @@ describe('formatIntervals', () => {
       }
     }
   })
+
+  it('shows the expected intervals after three successful Goods', () => {
+    const scheduler = createScheduler()
+    let card = newCard()
+    let when = new Date(Date.parse('2026-01-15T12:00:00.000Z'))
+
+    for (let i = 0; i < 3; i += 1) {
+      const rated = calculateOutcomes(scheduler, card, when).find((o) => o.rating === Rating.Good)
+      if (!rated) throw new Error('missing Good outcome')
+      card = rated.card
+      when = card.due
+    }
+
+    // The 3rd Good leaves the card in Review with ~7.3 days of stability; at
+    // 95% retention the next preview is days, not months.
+    const outcomes = calculateOutcomes(scheduler, card, when)
+    const labels = formatIntervals(
+      when,
+      outcomes.map((o) => o.due),
+    )
+    expect(labels).toEqual(['10m', '6d', '8d', '12d'])
+    expect(
+      outcomes.map((o) => Math.round((o.due.getTime() - when.getTime()) / 86_400_000)),
+    ).toEqual([0, 6, 8, 12])
+  })
 })
