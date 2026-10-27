@@ -12,7 +12,8 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 20px 0;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
 }
 
@@ -26,7 +27,8 @@ main {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding-bottom: 40px;
+  justify-content: safe center;
+  padding-bottom: 148px;
   gap: 16px;
 }
 
@@ -48,6 +50,9 @@ main {
   justify-content: center;
   position: relative;
   cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
 }
 
 .flashcard.revealed {
@@ -105,6 +110,167 @@ main {
   gap: 8px;
 }
 
+.study-hint {
+  text-align: center;
+}
+
+.rating-bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: var(--bg);
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 -12px 36px -28px rgba(15, 23, 42, 0.45);
+  animation: rating-bar-in 160ms ease-out;
+}
+
+.rating-bar-inner {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.rating-bar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.rating-bar-hint {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.rating-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.rating-button {
+  --rating: var(--text);
+  --rating-bg: var(--surface);
+  --rating-border: var(--border);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 0;
+  min-height: 58px;
+  padding: 6px 4px 7px;
+  border: 1px solid var(--rating-border);
+  border-radius: 12px;
+  background: var(--rating-bg);
+  color: var(--rating);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    filter 120ms ease;
+}
+
+.rating-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px -16px var(--rating);
+  filter: saturate(1.05);
+}
+
+.rating-button:active {
+  transform: translateY(0);
+  filter: saturate(0.95);
+}
+
+.rating-button:focus-visible {
+  outline: 2px solid var(--rating);
+  outline-offset: 2px;
+}
+
+.rating-again {
+  --rating: var(--rating-again);
+  --rating-bg: var(--rating-again-bg);
+  --rating-border: var(--rating-again-border);
+}
+
+.rating-hard {
+  --rating: var(--rating-hard);
+  --rating-bg: var(--rating-hard-bg);
+  --rating-border: var(--rating-hard-border);
+}
+
+.rating-good {
+  --rating: var(--rating-good);
+  --rating-bg: var(--rating-good-bg);
+  --rating-border: var(--rating-good-border);
+}
+
+.rating-easy {
+  --rating: var(--rating-easy);
+  --rating-bg: var(--rating-easy-bg);
+  --rating-border: var(--rating-easy-border);
+}
+
+.rating-key {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.62;
+}
+
+.rating-name {
+  font-size: clamp(0.52rem, 1.6vw, 0.68rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.78;
+  white-space: nowrap;
+}
+
+.rating-interval {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: clamp(0.62rem, 2.4vw, 1.05rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes rating-bar-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 640px) {
   .flashcard {
     min-height: 240px;
@@ -113,5 +279,39 @@ main {
 
   .item-value {
     font-size: 20px;
+  }
+
+  main {
+    padding-bottom: 136px;
+  }
+}
+
+@media (max-width: 480px) {
+  .rating-bar {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .rating-grid {
+    gap: 6px;
+  }
+
+  .rating-button {
+    min-height: 54px;
+    border-radius: 10px;
+  }
+
+  .rating-bar-head {
+    font-size: 9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rating-bar {
+    animation: none;
+  }
+
+  .rating-button {
+    transition: none;
   }
 }

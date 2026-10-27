@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Badge, Button, Group, Kbd, Paper, Text } from '@mantine/core'
+import { Badge, Group, Kbd, Paper, Text } from '@mantine/core'
 import { Rating } from '../lib/scheduler'
 
 interface CardSection {
@@ -25,11 +25,11 @@ const RATING_NAMES: Record<number, string> = {
   [Rating.Easy]: 'Easy',
 }
 
-const RATING_COLORS: Record<number, string> = {
-  [Rating.Again]: 'red',
-  [Rating.Hard]: 'orange',
-  [Rating.Good]: 'green',
-  [Rating.Easy]: 'indigo',
+const RATING_KEYS: Record<number, string> = {
+  [Rating.Again]: 'again',
+  [Rating.Hard]: 'hard',
+  [Rating.Good]: 'good',
+  [Rating.Easy]: 'easy',
 }
 
 export default function Card({
@@ -97,34 +97,42 @@ export default function Card({
         {revealed ? renderSections(back) : renderSections(front)}
       </Paper>
 
-      <Text size="sm" c="dimmed">
-        {revealed ? (
-          <>
-            Press <Kbd>1</Kbd>–<Kbd>4</Kbd> or click a button to rate
-          </>
-        ) : (
-          <>
-            Click the card or press <Kbd>Space</Kbd> to reveal
-          </>
-        )}
-      </Text>
+      {!revealed && (
+        <Text size="sm" c="dimmed" className="study-hint">
+          Click the card or press <Kbd>Space</Kbd> to reveal
+        </Text>
+      )}
 
       {revealed && (
-        <Group gap="sm">
-          {ratings.map(({ rating, label }, i) => (
-            <Button
-              key={rating}
-              color={RATING_COLORS[rating]}
-              variant="light"
-              size="lg"
-              leftSection={<Kbd>{String(i + 1)}</Kbd>}
-              title={RATING_NAMES[rating]}
-              onClick={() => onRate(rating)}
-            >
-              {label}
-            </Button>
-          ))}
-        </Group>
+        <div className="rating-bar">
+          <div className="rating-bar-inner">
+            <div className="rating-bar-head">
+              <span>Rate this card</span>
+              <span className="rating-bar-hint">Keys 1–4</span>
+            </div>
+            <div className="rating-grid">
+              {ratings.map(({ rating, label }, i) => {
+                const name = RATING_NAMES[rating]
+                return (
+                  <button
+                    key={rating}
+                    type="button"
+                    className={`rating-button rating-${RATING_KEYS[rating]}`}
+                    title={`${name} — ${label}`}
+                    aria-label={`${name}: ${label}`}
+                    onClick={() => onRate(rating)}
+                  >
+                    <span className="rating-key" aria-hidden="true">
+                      {i + 1}
+                    </span>
+                    <span className="rating-name">{name}</span>
+                    <span className="rating-interval">{label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
       )}
     </section>
   )
