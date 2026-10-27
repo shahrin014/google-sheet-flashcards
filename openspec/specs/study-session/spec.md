@@ -122,46 +122,42 @@ Rating buttons SHALL display the interval each rating would produce for the curr
 - WHEN a button is inspected
 - THEN it names the rating it applies
 
-### Requirement: Persistent rating bar
-When a card is revealed, the system SHALL present the four ratings in a bar fixed to the bottom of the viewport, visible without scrolling, and SHALL keep the card content clear of the bar.
+### Requirement: Fixed rating bar
+When a card is revealed, the system SHALL present the four ratings in a bar fixed to the bottom of the viewport without covering the card.
 
-#### Scenario: Ratings visible without scrolling
+#### Scenario: Revealed card
 - GIVEN a revealed card on a short viewport
 - WHEN the rating bar is rendered
-- THEN all four ratings are visible at the bottom of the viewport
-- AND no scrolling is required to reach them
+- THEN all four ratings are visible without scrolling
 
 #### Scenario: Unrevealed card
 - GIVEN an unrevealed card
 - WHEN the study screen is rendered
 - THEN no rating bar is shown
 
-### Requirement: Single-row rating grid
-The four ratings SHALL remain in one row at every viewport width, and each label SHALL shrink to fit instead of wrapping or overflowing.
+### Requirement: Rating bar readability
+The four ratings SHALL stay in one row, labels SHALL shrink to fit instead of wrapping or overflowing, and each rating SHALL use a distinct, readable color in light and dark mode.
 
 #### Scenario: Narrow viewport
 - GIVEN a viewport narrow enough that the default label size would overflow
 - WHEN the rating bar is rendered
 - THEN the four buttons remain in one row
-- AND the labels shrink to fit
+- AND their labels shrink to fit
 
 #### Scenario: Long interval label
-- GIVEN a rating whose interval label is longer than the button's default text width
+- GIVEN a rating whose interval label is longer than the button's default width
 - WHEN the label is rendered
 - THEN it stays on one line within the button
 
-### Requirement: Rating color hierarchy
-Each rating SHALL use a distinct accent color with readable contrast in light and dark mode.
-
-#### Scenario: Distinct ratings
+#### Scenario: Distinct colors
 - GIVEN the four rating buttons are rendered
 - WHEN their colors are compared
-- THEN Again, Hard, Good, and Easy each have a distinct accent
+- THEN each rating has a distinct accent
 
 #### Scenario: Dark mode
 - GIVEN the system prefers dark mode
 - WHEN the rating bar is rendered
-- THEN every rating label remains readable against its button background
+- THEN every rating remains readable against its background
 
 ### Requirement: New-card indication
 The system SHALL mark a card as new once revealed, so the learner can distinguish first encounters from reviews.

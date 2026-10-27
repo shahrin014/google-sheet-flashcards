@@ -5,9 +5,8 @@ On narrow screens the four rating buttons sit below the card, so the learner mus
 ## What Changes
 
 - **MODIFIES** the `study-session` capability.
-  - **ADDED** requirement: *Persistent rating bar* — revealed cards show the four ratings in a fixed bottom bar.
-  - **ADDED** requirement: *Single-row rating grid* — four actions stay in one row, with fluid text that shrinks instead of wrapping.
-  - **ADDED** requirement: *Rating color hierarchy* — each rating has a distinct, readable accent color in light and dark mode.
+  - **ADDED** requirement: *Fixed rating bar* — revealed cards show the four ratings in a bottom-fixed bar.
+  - **ADDED** requirement: *Rating bar readability* — one row, fluid labels, and distinct light/dark colors.
 - No `gsf.` storage keys or stored data change.
 
 ## Impact
