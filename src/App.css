@@ -233,14 +233,14 @@ main {
 }
 
 .rating-key {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
   opacity: 0.62;
 }
 
 .rating-name {
-  font-size: clamp(0.52rem, 1.6vw, 0.68rem);
+  font-size: clamp(0.62rem, 1.8vw, 0.72rem);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -251,7 +251,7 @@ main {
 .rating-interval {
   max-width: 100%;
   overflow: hidden;
-  font-size: clamp(0.62rem, 2.4vw, 1.05rem);
+  font-size: clamp(0.82rem, 3vw, 1.05rem);
   font-variant-numeric: tabular-nums;
   font-weight: 750;
   letter-spacing: -0.02em;
@@ -272,17 +272,36 @@ main {
 }
 
 @media (max-width: 640px) {
+  .app {
+    padding: 0 16px;
+  }
+
+  .topbar {
+    gap: 10px;
+    padding: 10px 0;
+  }
+
+  .topbar-title {
+    font-size: 1.1rem;
+  }
+
+  main {
+    padding-top: 12px;
+    padding-bottom: calc(120px + env(safe-area-inset-bottom));
+  }
+
+  .card-stage {
+    flex: 1;
+  }
+
   .flashcard {
+    flex: 1;
     min-height: 240px;
     padding: 24px;
   }
 
   .item-value {
     font-size: 20px;
-  }
-
-  main {
-    padding-bottom: 136px;
   }
 }
 
@@ -297,12 +316,54 @@ main {
   }
 
   .rating-button {
-    min-height: 54px;
+    min-height: 56px;
     border-radius: 10px;
   }
 
   .rating-bar-head {
     font-size: 9px;
+  }
+}
+
+@media (max-height: 560px) {
+  .topbar {
+    padding: 8px 0;
+  }
+
+  .topbar-title {
+    font-size: 1.25rem;
+  }
+
+  main {
+    padding-top: 8px;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+
+  .card-stage {
+    flex: 1;
+  }
+
+  .flashcard {
+    flex: 1;
+    min-height: 0;
+    padding: 20px;
+  }
+
+  .item-value {
+    font-size: 18px;
+  }
+
+  .rating-bar {
+    padding-top: 6px;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom));
+  }
+
+  .rating-bar-head {
+    display: none;
+  }
+
+  .rating-button {
+    min-height: 48px;
   }
 }
 
