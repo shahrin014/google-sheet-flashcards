@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   Rating,
+  calculateOutcomes,
   createScheduler,
   formatInterval,
+  formatIntervals,
   isDue,
   newCard,
-  previewDues,
-  scheduleCard,
 } from './scheduler'
 
 describe('newCard', () => {
@@ -64,28 +64,144 @@ describe('formatInterval', () => {
   })
 })
 
-describe('scheduling', () => {
-  it('previewDues increase with better ratings', () => {
-    const scheduler = createScheduler()
-    const dues = previewDues(scheduler, newCard())
-    expect(dues[Rating.Again].getTime()).toBeLessThanOrEqual(dues[Rating.Hard].getTime())
-    expect(dues[Rating.Hard].getTime()).toBeLessThanOrEqual(dues[Rating.Good].getTime())
-    expect(dues[Rating.Good].getTime()).toBeLessThanOrEqual(dues[Rating.Easy].getTime())
+describe('calculateOutcomes', () => {
+  const now = new Date(Date.parse('2026-01-15T12:00:00.000Z'))
+
+  it('returns one outcome per rating in the fixed order', () => {
+    const outcomes = calculateOutcomes(createScheduler(), newCard(), now)
+    expect(outcomes.map((o) => o.rating)).toEqual([
+      Rating.Again,
+      Rating.Hard,
+      Rating.Good,
+      Rating.Easy,
+    ])
+    for (const outcome of outcomes) expect(outcome.due).toBeInstanceOf(Date)
   })
 
-  it('scheduleCard moves the due date forward in time', () => {
+  it('is deterministic for a fixed reference instant', () => {
     const scheduler = createScheduler()
-    const card = newCard()
-    const before = Date.now()
-    const next = scheduleCard(scheduler, card, Rating.Good)
-    expect(next.due.getTime()).toBeGreaterThanOrEqual(before)
+    expect(calculateOutcomes(scheduler, newCard(), now).map((o) => o.due.getTime())).toEqual(
+      calculateOutcomes(scheduler, newCard(), now).map((o) => o.due.getTime()),
+    )
   })
 
-  it('records progress on repeating ratings', () => {
+  it('uses the given reference instant rather than the current time', () => {
+    const outcomes = calculateOutcomes(createScheduler(), newCard(), now)
+    for (const outcome of outcomes) {
+      expect(outcome.due.getTime()).toBeGreaterThanOrEqual(now.getTime())
+    }
+  })
+
+  it('schedules exactly what it reports, so the applied due equals the shown due', () => {
+    const outcomes = calculateOutcomes(createScheduler(), newCard(), now)
+    for (const outcome of outcomes) {
+      expect(outcome.card.due.getTime()).toBe(outcome.due.getTime())
+    }
+  })
+
+  it('pushes the due time further out for better ratings', () => {
+    const outcomes = calculateOutcomes(createScheduler(), newCard(), now)
+    const dues = outcomes.map((o) => o.due.getTime())
+    for (let i = 1; i < dues.length; i += 1) {
+      expect(dues[i]).toBeGreaterThanOrEqual(dues[i - 1])
+    }
+  })
+})
+
+describe('formatIntervals', () => {
+  const from = new Date(Date.parse('2026-01-15T12:00:00.000Z'))
+  const at = (ms: number) => new Date(from.getTime() + ms)
+
+  it('matches the single formatter when nothing collides', () => {
+    const dues = [at(10 * 60_000), at(2 * 3_600_000), at(3 * 86_400_000), at(400 * 86_400_000)]
+    expect(formatIntervals(from, dues)).toEqual(dues.map((due) => formatInterval(from, due)))
+  })
+
+  it('lets equal intervals share a label', () => {
+    const dues = [at(10 * 60_000), at(10 * 60_000)]
+    const labels = formatIntervals(from, dues)
+    expect(labels[0]).toBe(labels[1])
+  })
+
+  it('labels monotonic ratings with monotonic labels', () => {
     const scheduler = createScheduler()
-    const card = newCard()
-    const first = scheduleCard(scheduler, card, Rating.Good)
-    const second = scheduleCard(scheduler, first, Rating.Good)
-    expect(second.due.getTime()).toBeGreaterThan(first.due.getTime())
+    const dues = calculateOutcomes(scheduler, newCard(), from).map((o) => o.due)
+    const labels = formatIntervals(from, dues)
+    expect(labels).toHaveLength(4)
+  })
+
+  it('distinguishes month-level intervals that round to the same month', () => {
+    const dues = [at(40 * 86_400_000), at(44 * 86_400_000)]
+    const labels = formatIntervals(from, dues)
+    expect(labels[0]).not.toBe(labels[1])
+  })
+
+  it('distinguishes hour-level intervals that round to the same hour', () => {
+    const dues = [at(121 * 60_000), at(122 * 60_000)]
+    const labels = formatIntervals(from, dues)
+    expect(labels[0]).not.toBe(labels[1])
+  })
+
+  it('falls back to minute precision when coarser refinements still collide', () => {
+    const dues = [at(1.4 * 86_400_000), at(1.4 * 86_400_000 + 61_000)]
+    const labels = formatIntervals(from, dues)
+    expect(labels[0]).not.toBe(labels[1])
+    expect(labels[0]).toMatch(/m$/)
+  })
+
+  it('does not force distinct labels for intervals under a minute apart', () => {
+    const dues = [at(20_000), at(40_000)]
+    const labels = formatIntervals(from, dues)
+    expect(labels[0]).toBe(labels[1])
+  })
+
+  it('produces no labels when there are no dues', () => {
+    expect(formatIntervals(from, [])).toEqual([])
+  })
+
+  it('keeps real rating outcomes distinct as a card matures', () => {
+    const scheduler = createScheduler()
+    let card = newCard()
+    let when = new Date(Date.parse('2026-01-15T12:00:00.000Z'))
+    for (let i = 0; i < 6; i += 1) {
+      const rated = calculateOutcomes(scheduler, card, when).find((o) => o.rating === Rating.Good)
+      if (!rated) throw new Error('missing Good outcome')
+      card = rated.card
+      when = card.due
+    }
+    const dues = calculateOutcomes(scheduler, card, when).map((o) => o.due)
+    const labels = formatIntervals(when, dues)
+    for (let a = 0; a < dues.length; a += 1) {
+      for (let b = a + 1; b < dues.length; b += 1) {
+        if (Math.abs(dues[a].getTime() - dues[b].getTime()) >= 60_000) {
+          expect(labels[a]).not.toBe(labels[b])
+        }
+      }
+    }
+  })
+
+  it('shows the expected intervals after three successful Goods', () => {
+    const scheduler = createScheduler()
+    let card = newCard()
+    let when = new Date(Date.parse('2026-01-15T12:00:00.000Z'))
+
+    for (let i = 0; i < 3; i += 1) {
+      const rated = calculateOutcomes(scheduler, card, when).find((o) => o.rating === Rating.Good)
+      if (!rated) throw new Error('missing Good outcome')
+      card = rated.card
+      when = card.due
+    }
+
+    // The 3rd Good leaves the card in Review with ~7.3 days of stability; at
+    // 95% retention the next preview is days, not months.
+    const outcomes = calculateOutcomes(scheduler, card, when)
+    const labels = formatIntervals(
+      when,
+      outcomes.map((o) => o.due),
+    )
+    expect(labels).toEqual(['10m', '6d', '8d', '12d'])
+    expect(
+      outcomes.map((o) => Math.round((o.due.getTime() - when.getTime()) / 86_400_000)),
+    ).toEqual([0, 6, 8, 12])
   })
 })

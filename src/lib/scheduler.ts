@@ -1,46 +1,118 @@
 import { createEmptyCard, fsrs, Rating, type Card, type FSRS } from 'ts-fsrs'
 
+/**
+ * FSRS-6 scheduling using ts-fsrs with 95% desired retention (the library
+ * default is 90%) and otherwise default parameters: 1m/10m learning steps, a
+ * 10m relearning step, fuzzing off, and a 36500-day maximum interval.
+ * Stability is the interval at 90% recall; each rating updates stability and
+ * difficulty, and the next due time is derived from stability.
+ *
+ * See docs/scheduling.md for the formulas and a worked example.
+ */
 export { Rating }
 
+/** Desired recall probability; 95% trades more reviews for fewer lapses. */
+const REQUEST_RETENTION = 0.95
+
+const MINUTE = 60_000
+const HOUR = 3_600_000
+const DAY = 86_400_000
+
+const RATING_ORDER = [Rating.Again, Rating.Hard, Rating.Good, Rating.Easy] as const
+
+export interface RatingOutcome {
+  rating: Rating
+  due: Date
+  card: Card
+}
+
+/** One scheduler shared by the whole session, targeting 95% retention. */
 export function createScheduler(): FSRS {
-  return fsrs()
+  return fsrs({ request_retention: REQUEST_RETENTION })
 }
 
 export function newCard(): Card {
   return createEmptyCard()
 }
 
-export function scheduleCard(scheduler: FSRS, card: Card, rating: Rating): Card {
-  const now = new Date()
-  const scheduling = scheduler.repeat(card, now)
-  const preview = (scheduling as unknown as Record<number, { card: Card }>)[rating]
-  return preview.card
-}
-
-export function previewDues(scheduler: FSRS, card: Card): Record<number, Date> {
-  const now = new Date()
+/** Compute all four rating outcomes once, from a single reference instant. */
+export function calculateOutcomes(scheduler: FSRS, card: Card, now: Date): RatingOutcome[] {
   const scheduling = scheduler.repeat(card, now)
   const map = scheduling as unknown as Record<number, { card: Card }>
-  return {
-    [Rating.Again]: map[Rating.Again].card.due,
-    [Rating.Hard]: map[Rating.Hard].card.due,
-    [Rating.Good]: map[Rating.Good].card.due,
-    [Rating.Easy]: map[Rating.Easy].card.due,
-  }
+  return RATING_ORDER.map((rating) => {
+    const next = map[rating].card
+    return { rating, due: next.due, card: next }
+  })
 }
 
-export function formatInterval(from: Date, to: Date): string {
-  const MIN = 60_000
-  const HOUR = 3_600_000
-  const DAY = 86_400_000
-  const ms = to.getTime() - from.getTime()
-  if (ms < MIN) return '<1m'
-  if (ms < HOUR) return `${Math.round(ms / MIN)}m`
+/** Coarsest label; `formatIntervals` retries with finer units on collisions. */
+function formatCoarse(ms: number): string {
+  if (ms < MINUTE) return '<1m'
+  if (ms < HOUR) return `${Math.round(ms / MINUTE)}m`
   if (ms < DAY) return `${Math.round(ms / HOUR)}h`
   const days = ms / DAY
   if (days < 30) return `${Math.round(days)}d`
   if (days < 365) return `${Math.round(days / 30.44)}mo`
   return `${Math.round(days / 365)}yr`
+}
+
+function formatDetailed(ms: number): string {
+  if (ms < MINUTE) return '<1m'
+  if (ms < HOUR) return `${Math.round(ms / MINUTE)}m`
+  if (ms < DAY) {
+    const hours = Math.floor(ms / HOUR)
+    const minutes = Math.round((ms - hours * HOUR) / MINUTE)
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`
+  }
+  const days = ms / DAY
+  if (days < 365) {
+    if (days < 30.44) {
+      const whole = Math.floor(days)
+      const hours = Math.round((days - whole) * 24)
+      return hours > 0 ? `${whole}d ${hours}h` : `${whole}d`
+    }
+    const months = Math.floor(days / 30.44)
+    const remainder = Math.round(days - months * 30.44)
+    return remainder > 0 ? `${months}mo ${remainder}d` : `${months}mo`
+  }
+  const years = Math.floor(days / 365)
+  const remainder = Math.round((days - years * 365) / 30.44)
+  return remainder > 0 ? `${years}yr ${remainder}mo` : `${years}yr`
+}
+
+function formatMinutes(ms: number): string {
+  if (ms < MINUTE) return '<1m'
+  return `${Math.round(ms / MINUTE)}m`
+}
+
+const INTERVAL_FORMATTERS = [formatCoarse, formatDetailed, formatMinutes] as const
+
+export function formatInterval(from: Date, to: Date): string {
+  return formatCoarse(to.getTime() - from.getTime())
+}
+
+function labelsAreDistinct(durations: number[], labels: string[]): boolean {
+  for (let a = 0; a < durations.length; a += 1) {
+    for (let b = a + 1; b < durations.length; b += 1) {
+      if (Math.abs(durations[a] - durations[b]) >= MINUTE && labels[a] === labels[b]) {
+        return false
+      }
+    }
+  }
+  return true
+}
+
+/**
+ * Format a card's four intervals together, using the coarsest set of labels
+ * that keeps intervals at least a minute apart distinct.
+ */
+export function formatIntervals(from: Date, dues: Date[]): string[] {
+  const durations = dues.map((due) => due.getTime() - from.getTime())
+  for (const formatter of INTERVAL_FORMATTERS) {
+    const labels = durations.map((ms) => formatter(ms))
+    if (labelsAreDistinct(durations, labels)) return labels
+  }
+  return durations.map((ms) => formatMinutes(ms))
 }
 
 export function isDue(card: Card | undefined, now: Date): boolean {

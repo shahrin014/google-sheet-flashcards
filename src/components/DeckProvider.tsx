@@ -2,13 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useNavigate } from 'react-router-dom'
 import { State, type Card } from 'ts-fsrs'
 import {
+  calculateOutcomes,
   createScheduler,
-  formatInterval,
+  formatIntervals,
   isDue,
   newCard,
-  previewDues,
   Rating,
-  scheduleCard,
 } from '../lib/scheduler'
 import { fetchSheet, type SheetResult } from '../lib/sheet'
 import {
@@ -190,35 +189,39 @@ export function DeckProvider({ children }: { children: ReactNode }) {
   const today = new Date().toISOString().slice(0, 10)
   const reviewedToday = deck.logs.filter((l) => l.reviewDate.slice(0, 10) === today).length
 
-  const ratingIntervals = useMemo(() => {
+  const studyInstant = useMemo(() => ({ currentId, now: new Date() }), [currentId])
+  const referenceNow = studyInstant.now
+
+  const outcomes = useMemo(() => {
     const card = currentId ? deck.cards[currentId] : undefined
     if (!card) return []
-    const now = new Date()
-    const dues = previewDues(scheduler, card)
-    return (
-      [Rating.Again, Rating.Hard, Rating.Good, Rating.Easy] as const
-    ).map((rating) => ({ rating, label: formatInterval(now, dues[rating]) }))
-  }, [currentId, deck.cards, scheduler])
+    return calculateOutcomes(scheduler, card, referenceNow)
+  }, [currentId, deck.cards, scheduler, referenceNow])
+
+  const ratingIntervals = useMemo(() => {
+    if (outcomes.length === 0) return []
+    const labels = formatIntervals(referenceNow, outcomes.map((outcome) => outcome.due))
+    return outcomes.map((outcome, i) => ({ rating: outcome.rating, label: labels[i] }))
+  }, [outcomes, referenceNow])
 
   const handleRate = useCallback(
     (rating: Rating) => {
       if (!currentId || !currentRow || !settings) return
-      const card = deck.cards[currentId]
-      if (!card) return
-      const nextCard = scheduleCard(scheduler, card, rating)
+      const outcome = outcomes.find((o) => o.rating === rating)
+      if (!outcome) return
       const log: ReviewLog = {
         cardId: currentId,
         rating,
         reviewDate: new Date().toISOString(),
-        due: nextCard.due.toISOString(),
+        due: outcome.due.toISOString(),
       }
       setDeck((prev) => ({
-        cards: { ...prev.cards, [currentId]: nextCard },
+        cards: { ...prev.cards, [currentId]: outcome.card },
         logs: [...prev.logs, log],
       }))
       setRevealed(false)
     },
-    [currentId, currentRow, settings, deck.cards, scheduler],
+    [currentId, currentRow, settings, outcomes],
   )
 
   const handleResetProgress = useCallback(() => {
