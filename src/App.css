@@ -19,6 +19,7 @@
 
 .topbar-title {
   margin-right: auto;
+  letter-spacing: -0.03em;
 }
 
 main {
@@ -33,12 +34,16 @@ main {
 }
 
 .setup {
-  width: 100%;
-  max-width: 640px;
-  margin: 0 auto;
-  padding: 40px 16px;
+  width: calc(100% - 32px);
+  max-width: 680px;
+  margin: 32px auto;
+  padding: 32px;
   display: flex;
   flex-direction: column;
+  background: color-mix(in srgb, var(--surface) 94%, var(--accent) 6%);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
 }
 
 .flashcard {
@@ -50,8 +55,11 @@ main {
   justify-content: center;
   position: relative;
   cursor: pointer;
-  background: var(--surface);
+  background:
+    radial-gradient(120% 100% at 50% 0%, color-mix(in srgb, var(--accent) 5%, transparent), transparent 55%),
+    var(--surface);
   border: 1px solid var(--border);
+  border-radius: 20px;
   box-shadow: var(--shadow);
 }
 
@@ -73,6 +81,8 @@ main {
   flex-direction: column;
   gap: 18px;
   width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
 }
 
 .item {
@@ -102,12 +112,18 @@ main {
 }
 
 .done {
+  width: 100%;
+  max-width: 440px;
   text-align: center;
-  padding: 40px 20px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  background: color-mix(in srgb, var(--surface) 94%, var(--accent) 6%);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
 }
 
 .study-hint {
@@ -121,8 +137,8 @@ main {
   left: 0;
   z-index: 30;
   padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-  background: var(--bg);
-  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
   border-top: 1px solid var(--border);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -166,8 +182,6 @@ main {
 
 .rating-button {
   --rating: var(--text);
-  --rating-bg: var(--surface);
-  --rating-border: var(--border);
 
   display: flex;
   flex-direction: column;
@@ -176,11 +190,13 @@ main {
   gap: 1px;
   min-width: 0;
   min-height: 58px;
-  padding: 6px 4px 7px;
-  border: 1px solid var(--rating-border);
+  padding: 5px 4px 6px;
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--rating);
   border-radius: 12px;
-  background: var(--rating-bg);
-  color: var(--rating);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--control-shadow);
   font: inherit;
   line-height: 1;
   cursor: pointer;
@@ -189,18 +205,17 @@ main {
   transition:
     transform 120ms ease,
     box-shadow 120ms ease,
-    filter 120ms ease;
+    background-color 120ms ease;
 }
 
 .rating-button:hover {
   transform: translateY(-1px);
+  background: color-mix(in srgb, var(--rating) 5%, var(--surface));
   box-shadow: 0 8px 20px -16px var(--rating);
-  filter: saturate(1.05);
 }
 
 .rating-button:active {
   transform: translateY(0);
-  filter: saturate(0.95);
 }
 
 .rating-button:focus-visible {
@@ -210,47 +225,40 @@ main {
 
 .rating-again {
   --rating: var(--rating-again);
-  --rating-bg: var(--rating-again-bg);
-  --rating-border: var(--rating-again-border);
 }
 
 .rating-hard {
   --rating: var(--rating-hard);
-  --rating-bg: var(--rating-hard-bg);
-  --rating-border: var(--rating-hard-border);
 }
 
 .rating-good {
   --rating: var(--rating-good);
-  --rating-bg: var(--rating-good-bg);
-  --rating-border: var(--rating-good-border);
 }
 
 .rating-easy {
   --rating: var(--rating-easy);
-  --rating-bg: var(--rating-easy-bg);
-  --rating-border: var(--rating-easy-border);
 }
 
 .rating-key {
+  color: var(--muted);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  opacity: 0.62;
 }
 
 .rating-name {
+  color: var(--rating);
   font-size: clamp(0.62rem, 1.8vw, 0.72rem);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  opacity: 0.78;
   white-space: nowrap;
 }
 
 .rating-interval {
   max-width: 100%;
   overflow: hidden;
+  color: var(--text);
   font-size: clamp(0.82rem, 3vw, 1.05rem);
   font-variant-numeric: tabular-nums;
   font-weight: 750;
@@ -274,6 +282,12 @@ main {
 @media (max-width: 640px) {
   .app {
     padding: 0 16px;
+  }
+
+  .setup {
+    margin: 16px auto;
+    padding: 20px;
+    border-radius: 18px;
   }
 
   .topbar {

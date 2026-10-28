@@ -90,7 +90,7 @@ export default function Card({
         onClick={!revealed ? onReveal : undefined}
       >
         {revealed && isNew && (
-          <Badge variant="light" color="green" className="new-badge">
+          <Badge variant="light" color="teal" radius="xl" className="new-badge">
             New
           </Badge>
         )}

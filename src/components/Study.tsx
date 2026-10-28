@@ -92,13 +92,13 @@ export default function Study() {
           Sheet Flashcards
         </Title>
         <Group gap="xs">
-          <Badge variant="light" color="blue" title="New cards remaining">
+          <Badge variant="light" color="brand" radius="xl" title="New cards remaining">
             new {newCount}
           </Badge>
-          <Badge variant="light" color="orange" title="Cards due now">
+          <Badge variant="light" color="orange" radius="xl" title="Cards due now">
             due {dueCards.length}
           </Badge>
-          <Badge variant="light" color="teal" title="Reviewed today">
+          <Badge variant="light" color="teal" radius="xl" title="Reviewed today">
             today {reviewedToday}
           </Badge>
         </Group>

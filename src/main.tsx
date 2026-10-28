@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { createTheme, MantineProvider } from '@mantine/core'
+import { createTheme, MantineProvider, type MantineColorsTuple } from '@mantine/core'
 import { HashRouter, Route, Routes } from 'react-router-dom'
 import { loadSettings, type Settings } from './lib/storage'
 import { SettingsProvider } from './components/SettingsProvider'
@@ -22,8 +22,23 @@ const initial: { initialUrl: string; initialSettings: Settings | null } = urlSet
   ? { initialUrl: '', initialSettings: urlSettings }
   : { initialUrl: params.get('sheet') ?? loadSettings()?.sheetUrl ?? '', initialSettings: loadSettings() }
 
+const brand: MantineColorsTuple = [
+  '#eef4ff',
+  '#e0eaff',
+  '#c7d7fe',
+  '#a4bcfd',
+  '#8098f9',
+  '#6172f3',
+  '#444ce7',
+  '#3538cd',
+  '#2d31a6',
+  '#2a2d7f',
+]
+
 const theme = createTheme({
-  primaryColor: 'indigo',
+  primaryColor: 'brand',
+  primaryShade: { light: 6, dark: 6 },
+  colors: { brand },
   defaultRadius: 'md',
 })
 
