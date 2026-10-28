@@ -51,7 +51,7 @@ npm run lint     # oxlint
 
 ## Deploy to GitHub Pages
 
-This repo already includes a workflow that builds the app and deploys it on every push to `main`. To activate it:
+This repo already includes a workflow that builds the app and deploys it on every push to `main` or `nightly`. The live site reflects the most recent deployment, so a nightly push temporarily replaces the main build. To activate it:
 
 1. Open **Settings → Pages** and set **Source** to **GitHub Actions**.
 2. The next push (or **Actions → Deploy to GitHub Pages → Run workflow**) deploys the site.
